@@ -1,6 +1,16 @@
 # ofxVideoSlicer
 OpenFrameworks addon to slice video files. Threaded concept, using ffmpeg.
 
+Prerequisites
+-------------
+
+ofxVideoSlicer needs the ffmpeg binary to process videos. It is only tested on OSX, but should run on linux as well. On OSX, ofxVideoSlicer looks for the ffmpeg binary in the __resources path__ of the app bundle by default. Like this, you can bundle ffmpeg in your XCode Project by adding a "Copy File" build phase.
+
+Frame Accuracy
+--------------
+
+Although ofxVideoSlicer works quite accurate, absolute frame accuracy can not be guaranteed with all input formats. It performes very well with __prores__ encoded source material, since it is a format specially designed for video editing.
+
 Usage
 -----
 

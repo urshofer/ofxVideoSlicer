@@ -52,6 +52,7 @@ public:
             CFURLRef url = CFBundleCopyResourcesDirectoryURL ( bundle );
             url =  CFURLCopyAbsoluteURL ( url );
             path = convertCfString(CFURLGetString(url));
+            ofStringReplace(path,"file://localhost","");
         }
         else {
             path = _pathToFFMPEG;
@@ -59,7 +60,6 @@ public:
 #else
         path = _pathToFFMPEG;
 #endif
-        ofStringReplace(path,"file://localhost","");
         transcode = true;
         width = 640;
         height = 0;

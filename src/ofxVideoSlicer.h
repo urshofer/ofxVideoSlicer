@@ -16,7 +16,7 @@ private:
     
     string      path, codec;
     bool        transcode, scale;
-    int         width, rate;
+    int         width, height, rate, running;
 
     /* Helper Function */
     std::string convertCfString( CFStringRef str )
@@ -62,9 +62,11 @@ public:
         ofStringReplace(path,"file://localhost","");
         transcode = true;
         width = 640;
+        height = 0;
         rate = 500;
         codec = "h264";
         scale = true;
+        running = false;
         startThread();
     }
     
@@ -86,6 +88,7 @@ public:
         
         if (lock()) {
             queue.push_back(c);
+            running = queue.size();
             unlock();
         }
     }
@@ -146,20 +149,44 @@ public:
             unlock();
         }
     }
-    
+
+    //--------------------------------------------------------------
+    // Set Size of scaled output (width and height)
+    // This function rounds the height and width to even values
+    // if h264 output is active, otherwise the codec won't work
+    //--------------------------------------------------------------
+    void setSize(int _width, int _height){
+        if (lock()) {
+            // Round width
+            if (codec == "h264") {
+                width = round(_width / 2) * 2;
+                height = round(_height / 2) * 2;
+            }
+            else {
+                width = _width;
+                height = _height;
+            }
+            unlock();
+        }
+    }
+
+    //--------------------------------------------------------------
+    // Returns the number of pending tasks in the queue
+    //--------------------------------------------------------------
+    int processingQueueSize() {
+        return running;
+    }
+
     
     void threadedFunction(){
-        
         while (isThreadRunning()) {
             if (queue.size()>0) {
                 command c = queue.front();
                 queue.pop_front();
-
                 string movieName = ofFilePath::getBaseName(c.file);
                 string movieExtension = ofFilePath::getFileExt(c.file);
                 string moviePath = ofFilePath::getEnclosingDirectory(c.file, false);
                 string outfile = moviePath + ofToString(c.in,2) + "_" + ofToString(c.frames) + "_" + movieName;
-                
                 string command = path + "ffmpeg -i \"" + c.file + "\" -ss " + ofToString(c.in,2) + " -vframes " + ofToString(c.frames-2);
                 if (transcode) {
                     if (codec == "h264") {
@@ -170,18 +197,26 @@ public:
                         command += " -acodec mp3 -vcodec prores";
                         outfile += ".mov" ;
                     }
-                    
                     if (scale) {
-                        command += " -vf scale="+ofToString(width)+":-1";
+                        if (height != 0) {
+                            command += " -vf scale="+ofToString(width)+":"+ofToString(height);
+                        }
+                        else {
+                            command += " -vf scale="+ofToString(width)+":-1";
+                        }
                     }
-
                 }
                 else {
                     command += " -acodec copy -vcodec copy";
-                    outfile += movieExtension ;
+                    outfile += "." + movieExtension ;
                 }
                 command += " \""+ outfile + "\"";
                 system (command.c_str());
+                if (lock()) {
+                    running = queue.size();
+                    unlock();
+                }
+                
             }
             ofSleepMillis(100);
         }

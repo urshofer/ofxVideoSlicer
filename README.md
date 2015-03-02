@@ -27,6 +27,10 @@ Create a slice of a movie clip in the background:
 
     ffmpeg.addTask(string file, float in_point, int frames_duration);
 
+Check how many clips are pending in the queue:
+
+	int pending = ffmpeg.processingQueueSize();
+
 Please note:
 
 - file is a string containing the __absolute__ path to the movie file.

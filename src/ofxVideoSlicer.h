@@ -11,6 +11,7 @@ private:
         string  file;
         float   in;
         int     frames;
+        string  message;
     };
     deque<command> queue;
     
@@ -33,8 +34,13 @@ private:
     
 public:
     
-
+    struct endEvent {
+        string file;
+        string message;
+    };
     
+    ofEvent<endEvent> onFileProcessed;
+
     //--------------------------
     ofxVideoSlicer(){
     }
@@ -78,13 +84,16 @@ public:
     
     //--------------------------------------------------------------
     // Adds a splice task to queue
+    // string message is a optional string which will be passed to
+    // the onFileProcessed event
     //--------------------------------------------------------------
-    void addTask(string _file, float _in, int _frames){
+    void addTask(string _file, float _in, int _frames, string _message = ""){
         ofLogVerbose() << "+ ENQUEUE: LoadMovie: " << _file << endl;
         command c;
         c.file    = _file;
         c.in      = _in;
         c.frames  = _frames;
+        c.message = _message;
         
         if (lock()) {
             queue.push_back(c);
@@ -212,6 +221,10 @@ public:
                 }
                 command += " \""+ outfile + "\"";
                 system (command.c_str());
+                endEvent e;
+                e.file = outfile;
+                e.message = c.message;
+                ofNotifyEvent(onFileProcessed, e);
                 if (lock()) {
                     running = queue.size();
                     unlock();

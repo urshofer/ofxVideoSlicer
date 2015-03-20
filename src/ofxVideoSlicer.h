@@ -16,7 +16,7 @@ private:
     deque<command> queue;
     
     string      path, codec;
-    bool        transcode, scale;
+    bool        transcode, scale, audio;
     int         width, height, rate, running;
 
     /* Helper Function */
@@ -73,6 +73,7 @@ public:
         codec = "h264";
         scale = true;
         running = false;
+        audio = true;
         startThread();
     }
     
@@ -160,6 +161,16 @@ public:
     }
 
     //--------------------------------------------------------------
+    // Enables or disables Audio (default: 640)
+    //--------------------------------------------------------------
+    void setAudio(bool _audio) {
+        if (lock()) {
+            audio = _audio;
+            unlock();
+        }
+    }
+    
+    //--------------------------------------------------------------
     // Set Size of scaled output (width and height)
     // This function rounds the height and width to even values
     // if h264 output is active, otherwise the codec won't work
@@ -197,13 +208,16 @@ public:
                 string moviePath = ofFilePath::getEnclosingDirectory(c.file, false);
                 string outfile = moviePath + ofToString(c.in,2) + "_" + ofToString(c.frames) + "_" + movieName;
                 string command = path + "ffmpeg -i \"" + c.file + "\" -ss " + ofToString(c.in,2) + " -vframes " + ofToString(c.frames-2);
+                string acodec = "-an";
                 if (transcode) {
                     if (codec == "h264") {
-                        command += " -threads 0 -acodec aac -strict -2 -b:a 128k -vcodec h264 -vprofile high -pix_fmt yuv420p -preset slow -b:v "+ofToString(rate)+"k -maxrate "+ofToString(rate)+"k -bufsize 1000k";
+                        if (audio) acodec   = "-acodec aac -strict -2 -b:a 128k";
+                        command += " -threads 0 " + acodec + " -vcodec h264 -vprofile high -pix_fmt yuv420p -preset slow -b:v "+ofToString(rate)+"k -maxrate "+ofToString(rate)+"k -bufsize 1000k";
                         outfile += ".mp4" ;
                     }
                     if (codec == "prores") {
-                        command += " -acodec mp3 -vcodec prores";
+                        if (audio) acodec   = "-acodec mp3";
+                        command += " " + acodec + " -vcodec prores";
                         outfile += ".mov" ;
                     }
                     if (scale) {
@@ -216,7 +230,8 @@ public:
                     }
                 }
                 else {
-                    command += " -acodec copy -vcodec copy";
+                    if (audio) acodec   = "-acodec copy";
+                    command += " " + acodec + " -vcodec copy";
                     outfile += "." + movieExtension ;
                 }
                 command += " \""+ outfile + "\"";

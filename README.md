@@ -23,9 +23,9 @@ Start Function:
     ffmpeg.start();
     ffmpeg.start(string path_to_ffmpeg);    // Path with trailing slash required!
 
-Create a slice of a movie clip in the background:
+Create a slice of a movie clip in the background. The message string is passed to the onFileProcessed event:
 
-    ffmpeg.addTask(string file, float in_point, int frames_duration);
+    ffmpeg.addTask(string file, float in_point, int frames_duration, string message);
 
 Check how many clips are pending in the queue:
 
@@ -77,3 +77,30 @@ Width:
     ffmpeg.setWidth(int _width)
 
 Set Width of scaled output (default: 640). Height is set automatically according to the original aspect ratio.
+
+Events
+------
+
+You can register the following event:
+	
+	ofEvent<endEvent> onFileProcessed;
+
+In you application, register the event like (assuming your instance of the add-on is called ffmpeg):
+
+    ofAddListener(ffmpeg.onFileProcessed,this, &ofApp::onFileProcessed);
+
+The callback function receives a endEvent struct as parameter:
+
+	void ofApp::onFileProcessed(ofxVideoSlicer::endEvent & ev) {
+    	cout << ev.file << " processed with the message " << ev.message;
+	}
+	
+As you can see, endEvent contains two string, the filename and the message you passed on the beginning:
+
+    struct endEvent {
+        string file;
+        string message;
+    };
+    
+You can use the message for various purposes. One is to pass metadata about the movie to the slicer and
+upload it afterwards together with the movie clip to a web server.

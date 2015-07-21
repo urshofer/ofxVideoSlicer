@@ -36,6 +36,7 @@ public:
     
     struct endEvent {
         string file;
+        string jpg;
         string message;
     };
     
@@ -58,7 +59,11 @@ public:
             CFURLRef url = CFBundleCopyResourcesDirectoryURL ( bundle );
             url =  CFURLCopyAbsoluteURL ( url );
             path = convertCfString(CFURLGetString(url));
+            cout << "FFMPEG:" << path << endl;
+
             ofStringReplace(path,"file://localhost","");
+            ofStringReplace(path,"file://","");
+
         }
         else {
             path = _pathToFFMPEG;
@@ -66,6 +71,7 @@ public:
 #else
         path = _pathToFFMPEG;
 #endif
+        cout << "FFMPEG:" << path << endl;
         transcode = true;
         width = 640;
         height = 0;
@@ -98,7 +104,7 @@ public:
         
         if (lock()) {
             queue.push_back(c);
-            running = queue.size();
+            running++;
             unlock();
         }
     }
@@ -207,7 +213,7 @@ public:
                 string movieExtension = ofFilePath::getFileExt(c.file);
                 string moviePath = ofFilePath::getEnclosingDirectory(c.file, false);
                 string outfile = moviePath + ofToString(c.in,2) + "_" + ofToString(c.frames) + "_" + movieName;
-                string command = path + "ffmpeg -i \"" + c.file + "\" -ss " + ofToString(c.in,2) + " -vframes " + ofToString(c.frames-2);
+                string command = path + "ffmpeg -loglevel panic -y -nostdin -ss " + ofToString(c.in,2) + " -i \"" + c.file + "\" -vframes " + ofToString(c.frames);
                 string acodec = "-an";
                 if (transcode) {
                     if (codec == "h264") {
@@ -235,15 +241,30 @@ public:
                     outfile += "." + movieExtension ;
                 }
                 command += " \""+ outfile + "\"";
-                system (command.c_str());
-                endEvent e;
-                e.file = outfile;
-                e.message = c.message;
-                ofNotifyEvent(onFileProcessed, e);
+                ;
+                
+                int ret;
+                if( !(ret = system (command.c_str())) ) {
+                    
+                    // Create an jpg as well
+                    string jpg = path + "ffmpeg -loglevel panic -y -i \"" + outfile + "\" -vframes 1 \"" + outfile + ".jpg\"";
+                    system (jpg.c_str());
+                    
+                    endEvent e;
+                    e.file = outfile;
+                    e.jpg = outfile + ".jpg";
+                    e.message = c.message;
+                    ofNotifyEvent(onFileProcessed, e);
+                }
+                else {
+                    std::cout << "FFMPEG Stopped unnormal\n";
+                }
                 if (lock()) {
                     running = queue.size();
                     unlock();
                 }
+                
+
                 
             }
             ofSleepMillis(100);

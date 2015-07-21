@@ -81,7 +81,7 @@ Set Width of scaled output (default: 640). Height is set automatically according
 Events
 ------
 
-You can register the following event:
+ofxVideoSlicer fires an end Event after succesful processing. You can register it like this:
 	
 	ofEvent<endEvent> onFileProcessed;
 
@@ -95,12 +95,13 @@ The callback function receives a endEvent struct as parameter:
     	cout << ev.file << " processed with the message " << ev.message;
 	}
 	
-As you can see, endEvent contains two string, the filename and the message you passed on the beginning:
+As you can see, endEvent contains 3 strings, the filename of the clip and the screenshot and the message you passed on the beginning:
 
-    struct endEvent {
-        string file;
-        string message;
-    };
+  struct endEvent {
+    string file;
+    string jpg;
+    string message;
+  };
     
 You can use the message for various purposes. One is to pass metadata about the movie to the slicer and
 upload it afterwards together with the movie clip to a web server.

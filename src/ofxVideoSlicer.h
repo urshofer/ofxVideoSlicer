@@ -44,6 +44,14 @@ public:
 
     //--------------------------
     ofxVideoSlicer(){
+        transcode = true;
+        width = 640;
+        height = 0;
+        rate = 500;
+        codec = "h264";
+        scale = true;
+        running = false;
+        audio = true;
     }
     
 
@@ -72,14 +80,6 @@ public:
         path = _pathToFFMPEG;
 #endif
         cout << "FFMPEG:" << path << endl;
-        transcode = true;
-        width = 640;
-        height = 0;
-        rate = 500;
-        codec = "h264";
-        scale = true;
-        running = false;
-        audio = true;
         startThread();
     }
     
@@ -161,7 +161,12 @@ public:
     //--------------------------------------------------------------
     void setWidth(int _width){
         if (lock()) {
-            width = _width;
+            if (codec == "h264") {
+                width = round(_width / 2) * 2;
+            }
+            else {
+                width = _width;
+            }
             unlock();
         }
     }
@@ -244,6 +249,9 @@ public:
                 ;
                 
                 int ret;
+                
+                cout << "---" << endl << command << endl << "---" << endl;
+                
                 if( !(ret = system (command.c_str())) ) {
                     
                     // Create an jpg as well
